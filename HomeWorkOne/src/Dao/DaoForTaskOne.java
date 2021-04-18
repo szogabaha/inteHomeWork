@@ -12,17 +12,12 @@ import org.eclipse.rdf4j.repository.RepositoryResult;
 
 import java.util.*;
 
+import static Dao.IdentifierContainer.*;
 import static java.util.Arrays.asList;
 
-public class DaoForTaskOne {
-    private static final String ACTORS_BASE = IdentifierUtils.getIdBase()+ "E39_Actor/";  //0e65972d-ce68-3ad4-952d-063967f0a705
-    private static final String IS_IDENTIFIED_BY_PREDICATE = "http://erlangen-crm.org/current/P131_is_identified_by";
-    private static final String HAS_NOTE= "http://erlangen-crm.org/current/P3_has_note";
-    private static final String LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
-    private static final String HAD_PARTICIPANT = "http://erlangen-crm.org/current/P11_had_participant";
-    private static final String WAS_PRESENT_AT = "http://erlangen-crm.org/current/P12i_was_present_at";
+public class DaoForTaskOne extends AbstractDao {
 
-    private static Repository db;
+
 
 
     private static Map<Integer, List<String>> informationUsedForExtension = new HashMap<>();
@@ -31,8 +26,7 @@ public class DaoForTaskOne {
         return informationUsedForExtension;
     }
 
-    public static void initExtender(Repository db){
-        DaoForTaskOne.db = db;
+    public static void initExtender(){ ;
 
         String JULES_NATIONALITY = "Francia";
         String JULES_MOVEMENT = "Realizmus";
@@ -52,45 +46,37 @@ public class DaoForTaskOne {
 
     }
     public static List<Statement> queryActorPropertiesById(String id) {
-        IRI actor = Values.iri(ACTORS_BASE + id);
+        IRI actor = Values.iri(getActorsBase() + id);
         List<Statement> actorStatements = new ArrayList<>();
-        try (RepositoryConnection conn = db.getConnection()) {
-
+        try (RepositoryConnection conn = getDb().getConnection()) {
             RepositoryResult<Statement> result = conn.getStatements(actor, null, null);
             Iterations.addAll(result, actorStatements);
 
-        } finally {
-            db.shutDown();
+        }catch (Exception e) {
+            throw e;
+        }
+        finally {
+            getDb().shutDown();
         }
         return actorStatements;
     }
 
     public static String getNameFromActorProperties(List<Statement> properties){
-        try (RepositoryConnection conn = db.getConnection()){
-            Statement identifiedBy = properties.stream().filter(statement -> statement.getPredicate().equals(Values.iri(IS_IDENTIFIED_BY_PREDICATE))).findFirst().get();
+        try (RepositoryConnection conn = getDb().getConnection()){
+            Statement identifiedBy = properties.stream().filter(statement -> statement.getPredicate().equals(Values.iri(getIsIdentifiedByPredicate()))).findFirst().get();
             IRI actorAppellation = Values.iri(identifiedBy.getObject().stringValue());
-            String result = conn.getStatements(actorAppellation, Values.iri(HAS_NOTE), null).next().getObject().stringValue();
+            String result = conn.getStatements(actorAppellation, Values.iri(getHasNote()), null).next().getObject().stringValue();
             return result;
 
         } finally {
-            db.shutDown();
+            getDb().shutDown();
         }
 
     }
 
     public static void addStatement(Statement statement) {
-        try (RepositoryConnection conn = db.getConnection()) {
+        try (RepositoryConnection conn = getDb().getConnection()) {
             conn.add(statement);
-        } finally {
-        }
-
-    }
-
-    public static void removeStatement(Statement statement) {
-        try (RepositoryConnection conn = db.getConnection()) {
-            conn.remove(statement);
-        } finally {
-
         }
 
     }
@@ -100,16 +86,27 @@ public class DaoForTaskOne {
         return statementsToAdd;
     }
 
+
+    public static void removeStatement(Statement statement) {
+        try (RepositoryConnection conn = getDb().getConnection()) {
+            conn.remove(statement);
+        }
+
+    }
     public static void removeAddedStatements(){
+        try {
         List<Statement> addedStatements = getExtensionRelatedStatements();
         addedStatements.forEach(DaoForTaskOne::removeStatement);
+        } catch (Exception e){
+            //Db is not open, do nothing (Exception thrown has already been handled previously)
+        }
     }
 
     public static List<Statement> getExtensionRelatedStatements() {
         List<Statement> statements= new ArrayList<>();
         informationUsedForExtension.values().forEach(information -> {
-            IRI actor = Values.iri(ACTORS_BASE + information.get(0));
-            IRI predicate = Values.iri(LABEL);
+            IRI actor = Values.iri(getActorsBase() + information.get(0));
+            IRI predicate = Values.iri(getLabel());
             Value nationality = Values.getValueFactory().createLiteral(information.get(1));
             Value movement = Values.getValueFactory().createLiteral(information.get(2));
             Statement nationalityStatement = SimpleValueFactory.getInstance().createStatement(actor, predicate, nationality);
@@ -120,43 +117,5 @@ public class DaoForTaskOne {
         return statements;
     }
 
-    public static List<Statement> getCreationsOfActor(String actorName){
-        actorName = actorName.trim();
-        try (RepositoryConnection conn = db.getConnection()){
 
-            RepositoryResult<Statement> result = conn.getStatements(null, Values.iri(LABEL), Values.getValueFactory().createLiteral(actorName));
-            List<Statement> resultStatements = new ArrayList<>();
-            Iterations.addAll(result, resultStatements);
-            if(resultStatements.isEmpty()) {
-                return resultStatements;
-            }
-
-            List<Statement> creationHadParticipant = new ArrayList<>();
-            result = conn.getStatements(null, Values.iri(HAD_PARTICIPANT), resultStatements.get(0).getSubject());;
-            Iterations.addAll(result, creationHadParticipant);
-            if(creationHadParticipant.isEmpty()){
-                return creationHadParticipant;
-            }
-
-            List<Statement> physicalThingsPresentAt = new ArrayList<>();
-            for(Statement statement: resultStatements) {
-                result = conn.getStatements(null, Values.iri(WAS_PRESENT_AT), statement.getSubject());
-                Iterations.addAll(result, physicalThingsPresentAt);
-            }
-            if(physicalThingsPresentAt.isEmpty()){
-                return physicalThingsPresentAt;
-            }
-
-            List<Statement> paintingNames = new ArrayList<>();
-            for(Statement statement: physicalThingsPresentAt) {
-                result = conn.getStatements(statement.getSubject(), Values.iri(LABEL), null);
-                Iterations.addAll(result, paintingNames);
-            }
-
-            return paintingNames;
-
-        } finally {
-            db.shutDown();
-        }
-    }
 }

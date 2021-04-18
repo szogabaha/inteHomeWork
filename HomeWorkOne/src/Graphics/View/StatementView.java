@@ -1,4 +1,4 @@
-package View;
+package Graphics.View;
 
 import org.eclipse.rdf4j.model.Statement;
 

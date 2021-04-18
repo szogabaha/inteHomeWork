@@ -1,7 +1,10 @@
 package main;
 
+import Dao.AbstractDao;
 import Dao.DaoForTaskOne;
-import View.ElementBuilder;
+import Dao.PhysicalThingDao;
+import Graphics.ListViewBuilder;
+import Graphics.TableBuilder;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -26,16 +29,17 @@ public class Main extends Application {
     //Actor id for the first task of the homework
 
     @Override
-    public void start(Stage primaryStage) throws Exception{
+    public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/main/sample.fxml"));
-        primaryStage.setTitle("Hello World");
+        primaryStage.setTitle("Inte HF1");
         primaryStage.setScene(new Scene(root));
         primaryStage.show();
 
         String rdf4jServer = "http://localhost:8080/rdf4j-server/";
         String repositoryID = "szepmuveszeti";
         Repository db = new HTTPRepository(rdf4jServer, repositoryID);
-        initExtender(db);
+        initExtender();
+        AbstractDao.initDao(db);
         task1Init(root.getScene());
         addEventHandlers(root.getScene());
 
@@ -50,39 +54,76 @@ public class Main extends Application {
     }
 
 
-    public static void task1Init( Scene scene){
+    public static void task1Init(Scene scene) {
 
-        getInformationUsedForExtension().keySet().stream().forEach(i -> {
-            List<Statement> properties1 = queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
-            ElementBuilder.buildTableForArtistProperties("#table" + (i + 1), properties1, scene);
-            ElementBuilder.fillLabel("#name" + (i+1), getNameFromActorProperties(properties1), scene);
-        });
+        for (int i=0; i<3; i++){
+            TableBuilder.buildTableForArtistProperties("#table" + (i + 1), scene);
+        }
+
+        try {
+            getInformationUsedForExtension().keySet().stream().forEach(i -> {
+                List<Statement> statements = queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
+                TableBuilder.fillLabel("#name" + (i + 1), getNameFromActorProperties(statements), scene);
+                TableBuilder.refreshTableWithNewElements("#table" + (i+1), statements, scene);
+            });
+        } catch (Exception e) {
+            TableBuilder.fillLabel("#exceptionLabel", e.getMessage() + e.getCause().getMessage(), scene);
+        }
 
     }
+
     public static void main(String[] args) {
         launch(args);
     }
 
-    public static void addEventHandlers(Scene scene){
-        Button button = (Button)scene.lookup("#addProperties");
-        button.setOnAction(new EventHandler<ActionEvent>() {
-            @Override public void handle(ActionEvent e) {
-                for(int i = 0; i<3; i++) {
-                    addNewStatements();
-                    List<Statement> statements = DaoForTaskOne.queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
-                    ElementBuilder.refreshTableWithNewElements("#table" + (i+1), statements, scene);
+    public static void addEventHandlers(Scene scene) {
+        Button addButton = (Button) scene.lookup("#addProperties");
+        addButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                try {
+                    for (int i = 0; i < 3; i++) {
+                        addNewStatements();
+                        List<Statement> statements = DaoForTaskOne.queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
+                        TableBuilder.refreshTableWithNewElements("#table" + (i + 1), statements, scene);
+                    }
+                } catch (Exception ex) {
+                    TableBuilder.fillLabel("#exceptionLabel", ex.getMessage() + ex.getCause().getMessage(), scene);
                 }
 
             }
         });
 
-        Button searchButton = (Button)scene.lookup("#searchButton");
+        Button deleteButton = (Button) scene.lookup("#deleteProperties");
+        deleteButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                try {
+                    for (int i = 0; i < 3; i++) {
+                        DaoForTaskOne.removeAddedStatements();
+                        List<Statement> statements = DaoForTaskOne.queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
+                        TableBuilder.refreshTableWithNewElements("#table" + (i + 1), statements, scene);
+                    }
+                } catch (Exception ex) {
+                    TableBuilder.fillLabel("#exceptionLabel", ex.getMessage() + ex.getCause().getMessage(), scene);
+                }
+            }
+        });
+
+        Button searchButton = (Button) scene.lookup("#searchButton");
         searchButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                TextField field = (TextField)scene.lookup("#inputName");
-                DaoForTaskOne.getCreationsOfActor(field.getText());
+                try {
+                    TextField field = (TextField) scene.lookup("#inputName");
+                    List<Statement> physicalThingStatements = PhysicalThingDao.getCreationsOfActor(field.getText());
+                    ListViewBuilder.buildTableForArtistProperties("#paintingNamesView", physicalThingStatements, scene);
+                } catch (Exception ex) {
+                    TableBuilder.fillLabel("#exceptionLabel", ex.getMessage() + ex.getCause().getMessage(), scene);
+                }
             }
         });
+
+
     }
 }

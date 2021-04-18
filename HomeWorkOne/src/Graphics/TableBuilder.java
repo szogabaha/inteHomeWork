@@ -1,5 +1,6 @@
-package View;
+package Graphics;
 
+import Graphics.View.StatementView;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -9,10 +10,10 @@ import org.eclipse.rdf4j.model.Statement;
 
 import java.util.List;
 
-public class ElementBuilder {
+public class TableBuilder {
 
-    private ElementBuilder() { }
-    public static void buildTableForArtistProperties(String tableId, List<Statement> statementList, Scene scene) {
+    private TableBuilder() { }
+    public static void buildTableForArtistProperties(String tableId, Scene scene) {
         TableView tb = (TableView) scene.lookup(tableId);
 
         TableColumn subjectColumn = new TableColumn("Subject");
@@ -27,9 +28,6 @@ public class ElementBuilder {
 
         tb.getColumns().addAll(subjectColumn, predColumn, objectColumn);
 
-        StatementView.createViewListFrom(statementList).forEach(view ->{
-            tb.getItems().add(view);
-        });
     }
 
     public static void refreshTableWithNewElements(String tableId, List<Statement> newElements, Scene scene){
