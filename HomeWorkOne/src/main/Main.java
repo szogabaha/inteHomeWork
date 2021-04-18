@@ -1,7 +1,7 @@
 package main;
 
 import Dao.AbstractDao;
-import Dao.DaoForTaskOne;
+import Dao.ActorDao;
 import Dao.PhysicalThingDao;
 import Graphics.ListViewBuilder;
 import Graphics.TableBuilder;
@@ -22,11 +22,10 @@ import org.eclipse.rdf4j.repository.http.HTTPRepository;
 
 import java.util.List;
 
-import static Dao.DaoForTaskOne.*;
+import static Dao.ActorDao.*;
 
 public class Main extends Application {
 
-    //Actor id for the first task of the homework
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -84,7 +83,7 @@ public class Main extends Application {
                 try {
                     for (int i = 0; i < 3; i++) {
                         addNewStatements();
-                        List<Statement> statements = DaoForTaskOne.queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
+                        List<Statement> statements = ActorDao.queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
                         TableBuilder.refreshTableWithNewElements("#table" + (i + 1), statements, scene);
                     }
                 } catch (Exception ex) {
@@ -100,8 +99,8 @@ public class Main extends Application {
             public void handle(ActionEvent actionEvent) {
                 try {
                     for (int i = 0; i < 3; i++) {
-                        DaoForTaskOne.removeAddedStatements();
-                        List<Statement> statements = DaoForTaskOne.queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
+                        ActorDao.removeAddedStatements();
+                        List<Statement> statements = ActorDao.queryActorPropertiesById(getInformationUsedForExtension().get(i).get(0));
                         TableBuilder.refreshTableWithNewElements("#table" + (i + 1), statements, scene);
                     }
                 } catch (Exception ex) {

@@ -6,7 +6,6 @@ import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Values;
-import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
 
@@ -15,7 +14,7 @@ import java.util.*;
 import static Dao.IdentifierContainer.*;
 import static java.util.Arrays.asList;
 
-public class DaoForTaskOne extends AbstractDao {
+public class ActorDao extends AbstractDao {
 
 
 
@@ -82,7 +81,7 @@ public class DaoForTaskOne extends AbstractDao {
     }
     public static List<Statement> addNewStatements(){
         List<Statement> statementsToAdd = getExtensionRelatedStatements();
-        statementsToAdd.forEach(DaoForTaskOne::addStatement);
+        statementsToAdd.forEach(ActorDao::addStatement);
         return statementsToAdd;
     }
 
@@ -96,7 +95,7 @@ public class DaoForTaskOne extends AbstractDao {
     public static void removeAddedStatements(){
         try {
         List<Statement> addedStatements = getExtensionRelatedStatements();
-        addedStatements.forEach(DaoForTaskOne::removeStatement);
+        addedStatements.forEach(ActorDao::removeStatement);
         } catch (Exception e){
             //Db is not open, do nothing (Exception thrown has already been handled previously)
         }
